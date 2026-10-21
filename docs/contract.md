@@ -40,3 +40,83 @@ orders, order_items
 - Schema changes after Day 4 need a message in the group chat.
 - Never commit .env files.
 - Each person commits with their own name and GitHub email.
+
+## Shared table specs (decided by Gowri, final unless the team agrees to change)
+
+### users (Anjali)
+| Column | Type | Constraints |
+|---|---|---|
+| user_id | SERIAL | PK |
+| username | VARCHAR(50) | NOT NULL, UNIQUE |
+| email | VARCHAR(100) | NOT NULL, UNIQUE |
+| password_hash | TEXT | NOT NULL (bcrypt) |
+| role | VARCHAR(20) | NOT NULL, CHECK IN ('ADMIN','SUPPLIER','INSPECTOR','RETAILER') |
+| supplier_id | INT | FK -> suppliers, nullable |
+| retailer_id | INT | FK -> retailers, nullable |
+| is_active | BOOLEAN | NOT NULL, DEFAULT TRUE |
+| created_at | TIMESTAMPTZ | DEFAULT now() |
+| last_login | TIMESTAMPTZ | nullable |
+
+Role rule (CHECK): SUPPLIER requires supplier_id and no retailer_id; RETAILER requires
+retailer_id and no supplier_id; ADMIN and INSPECTOR have both NULL.
+Suppliers and retailers see only their own data through these links.
+
+### inspections (Madhumitha)
+| Column | Type | Constraints |
+|---|---|---|
+| inspection_id | SERIAL | PK |
+| batch_id | INT | NOT NULL, FK -> batches |
+| inspector_id | INT | NOT NULL, FK -> users |
+| inspected_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() |
+| result | VARCHAR(15) | NOT NULL, CHECK IN ('PASS','FAIL','CONDITIONAL') |
+| score | NUMERIC(5,2) | CHECK (score BETWEEN 0 AND 100) |
+| defect_type | VARCHAR(100) | nullable (required when result = 'FAIL') |
+| notes | TEXT | nullable |
+
+### recalls (Madhumitha)
+| Column | Type | Constraints |
+|---|---|---|
+| recall_id | SERIAL | PK |
+| recall_code | VARCHAR(30) | NOT NULL, UNIQUE |
+| source_inspection_id | INT | FK -> inspections, nullable |
+| initiated_by | INT | NOT NULL, FK -> users |
+| reason | TEXT | NOT NULL |
+| severity | VARCHAR(10) | NOT NULL, CHECK IN ('LOW','MEDIUM','HIGH','CRITICAL') |
+| status | VARCHAR(15) | NOT NULL, DEFAULT 'OPEN', CHECK IN ('OPEN','IN_PROGRESS','CLOSED') |
+| initiated_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() |
+| closed_at | TIMESTAMPTZ | CHECK: set only when status = 'CLOSED' |
+
+### recall_batches (Madhumitha)
+| Column | Type | Constraints |
+|---|---|---|
+| recall_id | INT | FK -> recalls |
+| batch_id | INT | FK -> batches |
+| units_affected | INT | NOT NULL, CHECK (units_affected >= 0) |
+| added_at | TIMESTAMPTZ | DEFAULT now() |
+Primary key: (recall_id, batch_id).
+
+### audit_log (Madhumitha)
+| Column | Type | Constraints |
+|---|---|---|
+| log_id | BIGSERIAL | PK |
+| table_name | VARCHAR(50) | NOT NULL |
+| record_id | INT | NOT NULL |
+| action | VARCHAR(10) | NOT NULL, CHECK IN ('INSERT','UPDATE','DELETE') |
+| old_value | JSONB | nullable |
+| new_value | JSONB | nullable |
+| changed_by | INT | FK -> users, nullable |
+| changed_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() |
+
+## SQL file order (run in this order; each person owns their file)
+| File | Owner | Contents |
+|---|---|---|
+| db/postgres/01_schema.sql | Gowri | core tables, constraints, indexes, ALTER and DROP demos |
+| db/postgres/02_users.sql | Anjali | users table |
+| db/postgres/03_recall_tables.sql | Madhumitha | inspections, recalls, recall_batches, audit_log |
+| db/postgres/04_triggers.sql | Madhumitha | quarantine trigger, audit trigger |
+| db/postgres/05_procedures.sql | Madhumitha and Gowri | initiate_recall (Madhumitha), process_order (Gowri) |
+| db/postgres/06_views.sql | Madhumitha and Gowri | active_recalls_view, inventory views |
+| db/postgres/99_seed.sql | Gowri | seed data |
+
+Why the order matters: users must exist before inspections and recalls can reference it,
+and triggers and procedures need all tables to exist first.
