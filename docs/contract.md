@@ -114,7 +114,9 @@ Primary key: (recall_id, batch_id).
 | db/postgres/02_users.sql | Anjali | users table |
 | db/postgres/03_recall_tables.sql | Madhumitha | inspections, recalls, recall_batches, audit_log |
 | db/postgres/04_triggers.sql | Madhumitha | quarantine trigger, audit trigger |
-| db/postgres/05_procedures.sql | Madhumitha and Gowri | initiate_recall (Madhumitha), process_order (Gowri) |
+| db/postgres/05_procedures.sql | Madhumitha | initiate_recall |
+| db/postgres/05a_order_procedures.sql | Gowri | place_order, cancel_order |
+| db/postgres/06a_views_inventory.sql | Gowri | inventory views |
 | db/postgres/06_views.sql | Madhumitha and Gowri | active_recalls_view, inventory views |
 | db/postgres/99_seed.sql | Gowri | seed data |
 
