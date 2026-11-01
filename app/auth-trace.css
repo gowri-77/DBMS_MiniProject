@@ -1,0 +1,44 @@
+.auth-card {
+  max-width: 420px;
+  margin: 60px auto;
+  padding: 32px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.auth-card h1 { margin: 0 0 6px; font-size: 26px; }
+.auth-form { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+.auth-form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+.auth-form input, .trace-controls select, .trace-controls input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  background: #fff;
+  color: var(--foreground);
+}
+.primary-btn {
+  padding: 11px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+}
+.primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.ghost-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--foreground);
+  cursor: pointer;
+}
+.user-chip { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); }
+.trace-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 24px; }
+.trace-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.trace-table th, .trace-table td { padding: 12px 14px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border); }
+.trace-table th { background: var(--background); color: var(--muted); font-weight: 600; }
+.trace-block { margin-bottom: 32px; }
+.trace-block h3 { margin: 0 0 12px; }
