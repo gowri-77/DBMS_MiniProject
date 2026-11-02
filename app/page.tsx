@@ -84,8 +84,14 @@ export default function Home() {
 	<a className="back-link" href="/orders">
   		View Orders →
 	</a>
-      </header>
+  <a className="back-link" href="/login">
+      Login →
+  </a>
 
+  <a className="back-link" href="/trace">
+      View Traceability →
+  </a>
+  </header>
       {loading && <p className="message">Loading inventory...</p>}
 
       {error && <p className="error-message">{error}</p>}
