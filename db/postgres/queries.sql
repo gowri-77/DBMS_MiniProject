@@ -87,10 +87,12 @@ SELECT date_trunc('month', sh.shipped_at)::date AS month, count(DISTINCT sh.ship
 FROM shipments sh JOIN shipment_items si ON si.shipment_id = sh.shipment_id
 GROUP BY 1 ORDER BY 1;
 
-\echo '== Q10 Full-text search: products matching "almond" =='
-SELECT sku, name, round(ts_rank(search_vector, q)::numeric, 3) AS relevance
-FROM products, websearch_to_tsquery('english', 'almond') q
-WHERE search_vector @@ q
+-- Q10 Full-text search: products matching "almond"
+SELECT sku, name,
+       ROUND(ts_rank(search_vector, q.query)::numeric, 3) AS relevance
+FROM products,
+     websearch_to_tsquery('english', 'almond') AS q(query)
+WHERE search_vector @@ q.query
 ORDER BY relevance DESC;
 
 \echo '== Q11 Partial-match search on batch codes (uses the trigram index) =='
