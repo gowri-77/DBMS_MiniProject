@@ -15,21 +15,13 @@ export async function GET() {
         r.status,
         r.initiated_at,
         r.closed_at,
-        COUNT(rb.batch_id) AS affected_batch_count,
-        COALESCE(SUM(rb.units_affected), 0) AS total_units_affected
+        COUNT(rb.batch_id)::INT AS affected_batch_count,
+        COALESCE(SUM(rb.units_affected), 0)::INT
+          AS total_units_affected
       FROM recalls r
       LEFT JOIN recall_batches rb
         ON r.recall_id = rb.recall_id
-      GROUP BY
-        r.recall_id,
-        r.recall_code,
-        r.source_inspection_id,
-        r.initiated_by,
-        r.reason,
-        r.severity,
-        r.status,
-        r.initiated_at,
-        r.closed_at
+      GROUP BY r.recall_id
       ORDER BY r.initiated_at DESC
     `);
 
@@ -44,13 +36,16 @@ export async function GET() {
   }
 }
 
-// CREATE a recall
+// CREATE a recall using the PostgreSQL procedure
 export async function POST(request: NextRequest) {
+  const client = await pool.connect();
+
   try {
     const body = await request.json();
 
     const {
       recall_code,
+      source_inspection_id,
       initiated_by,
       reason,
       severity,
@@ -58,72 +53,116 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (
-      !recall_code ||
-      !initiated_by ||
-      !reason ||
-      !severity ||
+      typeof recall_code !== "string" ||
+      !recall_code.trim() ||
+      recall_code.length > 30 ||
+      !Number.isInteger(Number(initiated_by)) ||
+      Number(initiated_by) <= 0 ||
+      typeof reason !== "string" ||
+      !reason.trim() ||
+      !["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(severity) ||
       !Array.isArray(batch_ids) ||
       batch_ids.length === 0
     ) {
       return NextResponse.json(
-        {
-          error:
-            "recall_code, initiated_by, reason, severity and at least one batch are required",
-        },
+        { error: "Invalid or missing recall details" },
         { status: 400 }
       );
     }
 
-    // Create the recall
-    const recallResult = await pool.query(
-      `
-      INSERT INTO recalls (
-        recall_code,
-        initiated_by,
-        reason,
-        severity
-      )
-      VALUES ($1, $2, $3, $4)
-      RETURNING *
-      `,
-      [recall_code, initiated_by, reason, severity]
-    );
+    const inspectionId =
+      source_inspection_id == null
+        ? null
+        : Number(source_inspection_id);
 
-    const recall = recallResult.rows[0];
-
-    // Add every affected batch and mark it as recalled
-    for (const batch of batch_ids) {
-      const { batch_id, units_affected } = batch;
-
-      await pool.query(
-        `
-        INSERT INTO recall_batches (
-          recall_id,
-          batch_id,
-          units_affected
-        )
-        VALUES ($1, $2, $3)
-        `,
-        [recall.recall_id, batch_id, units_affected]
-      );
-
-      await pool.query(
-        `
-        UPDATE batches
-        SET status = 'RECALLED'
-        WHERE batch_id = $1
-        `,
-        [batch_id]
+    if (
+      inspectionId !== null &&
+      (!Number.isInteger(inspectionId) || inspectionId <= 0)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid source inspection ID" },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json(recall, { status: 201 });
+    // Support both [1, 2] and [{ batch_id: 1 }, { batch_id: 2 }]
+    const batchIds = batch_ids.map((batch: number | { batch_id: number }) =>
+      typeof batch === "number" ? batch : Number(batch.batch_id)
+    );
+
+    if (
+      batchIds.some(
+        (id: number) => !Number.isInteger(id) || id <= 0
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Invalid batch IDs" },
+        { status: 400 }
+      );
+    }
+
+    await client.query("BEGIN");
+
+    // Call the existing PostgreSQL procedure
+    await client.query(
+      `
+      CALL initiate_recall(
+        $1::VARCHAR(30),
+        $2::INT,
+        $3::INT,
+        $4::TEXT,
+        $5::VARCHAR(10),
+        $6::INT[]
+      )
+      `,
+      [
+        recall_code.trim(),
+        inspectionId,
+        Number(initiated_by),
+        reason.trim(),
+        severity,
+        batchIds,
+      ]
+    );
+
+    // Retrieve the newly created recall
+    const result = await client.query(
+      `
+      SELECT
+        r.recall_id,
+        r.recall_code,
+        r.source_inspection_id,
+        r.initiated_by,
+        r.reason,
+        r.severity,
+        r.status,
+        r.initiated_at,
+        r.closed_at,
+        COUNT(rb.batch_id)::INT AS affected_batch_count,
+        COALESCE(SUM(rb.units_affected), 0)::INT
+          AS total_units_affected
+      FROM recalls r
+      LEFT JOIN recall_batches rb
+        ON r.recall_id = rb.recall_id
+      WHERE r.recall_code = $1
+      GROUP BY r.recall_id
+      `,
+      [recall_code.trim()]
+    );
+
+    await client.query("COMMIT");
+
+    return NextResponse.json(result.rows[0], { status: 201 });
   } catch (error) {
+    await client.query("ROLLBACK");
+
     console.error("Failed to create recall:", error);
 
     return NextResponse.json(
       { error: "Failed to create recall" },
       { status: 500 }
     );
+  } finally {
+    client.release();
   }
 }
