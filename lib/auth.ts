@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/db";
 
 export type Role = "ADMIN" | "SUPPLIER" | "QUALITY_INSPECTOR" | "RETAILER";
 
@@ -26,6 +27,8 @@ export async function signToken(user: SessionUser): Promise<string> {
 }
 
 // Reads the token from "Authorization: Bearer <token>" or the "token" cookie.
+// Also re-checks the database so a disabled/deleted user loses access immediately
+// instead of keeping a valid token until it expires.
 export async function getSession(req: NextRequest): Promise<SessionUser | null> {
   const header = req.headers.get("authorization");
   const token = header?.startsWith("Bearer ")
@@ -34,7 +37,13 @@ export async function getSession(req: NextRequest): Promise<SessionUser | null> 
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    return payload as unknown as SessionUser;
+    const user = payload as unknown as SessionUser;
+    const { rows } = await pool.query(
+      "SELECT is_active FROM users WHERE user_id = $1",
+      [user.user_id]
+    );
+    if (!rows[0] || !rows[0].is_active) return null;
+    return user;
   } catch {
     return null;
   }

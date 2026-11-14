@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/client";
 
 type Order = {
   order_id: number;
@@ -20,7 +21,7 @@ export default function OrdersPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/orders")
+    authFetch("/api/orders")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to load orders");

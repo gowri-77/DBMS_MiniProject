@@ -70,6 +70,18 @@ try {
      MATCH (s:Shipment {shipment_id: toInteger(r.shipment_id)}), (t:Retailer {retailer_id: toInteger(r.to_retailer_id)})
      MERGE (s)-[:DELIVERED_TO]->(t)`, r => r.to_retailer_id != null);
 
+  // multi-tier supplier hierarchy (optional: only if db/postgres/02a_supplier_links.sql was run)
+  const hasLinks = (await pool.query("SELECT to_regclass('public.supplier_links') AS t")).rows[0].t;
+  if (hasLinks) {
+    await load('supplier_links', 'SELECT upstream_supplier_id, downstream_supplier_id FROM supplier_links',
+      `UNWIND $rows AS r
+       MATCH (u:Supplier {supplier_id: toInteger(r.upstream_supplier_id)}),
+             (d:Supplier {supplier_id: toInteger(r.downstream_supplier_id)})
+       MERGE (u)-[:SUPPLIES_RAW_MATERIAL_TO]->(d)`);
+  } else {
+    console.log('supplier_links table not found - skipping multi-tier edges');
+  }
+
   console.log('Import complete');
 } finally {
   await session.close();

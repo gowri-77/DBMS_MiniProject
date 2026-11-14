@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/client";
 
 type LowStockItem = {
   warehouse: string;
@@ -17,7 +18,7 @@ export default function LowStockPage() {
   useEffect(() => {
     async function loadLowStock() {
       try {
-        const response = await fetch("/api/low-stock");
+        const response = await authFetch("/api/low-stock");
 
         if (!response.ok) {
           throw new Error("Unable to load low-stock data");
