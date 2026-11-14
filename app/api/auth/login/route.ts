@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { pool } from "@/lib/db";
 import { signToken, SessionUser } from "@/lib/auth";
+import { isLocked, recordFailure, clearFailures } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   let body: { email?: unknown; password?: unknown };
@@ -16,6 +17,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "email and password are required" }, { status: 400 });
   }
 
+  const key = `${email.trim().toLowerCase()}|${req.headers.get("x-forwarded-for") ?? "local"}`;
+  if (isLocked(key)) {
+    return NextResponse.json(
+      { error: "Too many failed attempts. Try again in 15 minutes." },
+      { status: 429 }
+    );
+  }
+
   try {
     const result = await pool.query(
       `SELECT user_id, email, role, password_hash, supplier_id, retailer_id, is_active
@@ -27,9 +36,11 @@ export async function POST(req: NextRequest) {
     // Same message for unknown email / wrong password / disabled account
     const ok = row && row.is_active && (await bcrypt.compare(password, row.password_hash));
     if (!ok) {
+      recordFailure(key);
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
+    clearFailures(key);
     const user: SessionUser = {
       user_id: row.user_id,
       email: row.email,

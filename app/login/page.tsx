@@ -27,7 +27,9 @@ export default function LoginPage() {
         return;
       }
       const role: string = data.user.role;
-      router.push(role === "ADMIN" || role === "QUALITY_INSPECTOR" ? "/trace" : "/");
+      router.push(
+        role === "ADMIN" || role === "QUALITY_INSPECTOR" ? "/trace" : role === "RETAILER" ? "/orders" : "/"
+      );
     } catch {
       setError("Could not reach the server. Please try again.");
     } finally {

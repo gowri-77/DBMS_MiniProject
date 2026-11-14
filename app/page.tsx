@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/client";
 
 type Warehouse = {
   warehouse_id: number;
@@ -21,7 +22,7 @@ export default function Home() {
   useEffect(() => {
     async function loadWarehouses() {
       try {
-        const response = await fetch("/api/warehouses");
+        const response = await authFetch("/api/warehouses");
 
         if (!response.ok) {
           throw new Error("Unable to load warehouse inventory.");

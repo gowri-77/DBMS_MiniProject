@@ -23,11 +23,16 @@ A web-based supply chain inventory and traceability application built using Next
 - Shows retailer names, cities, and order quantities.
 - Displays order status, shipment status, and delivery dates.
 
+### 5. Batch Traceability (Neo4j) and Access Control
+- Login with role-based access (ADMIN, SUPPLIER, QUALITY_INSPECTOR, RETAILER); bcrypt + JWT in an httpOnly cookie.
+- `/trace` traces a batch upstream (suppliers, multi-tier sub-suppliers up to 5 levels) and downstream (shipments, warehouses, retailers).
+- Suppliers see only their own batches; retailers see only their own orders.
+
 ## Technology Stack
 
 - Frontend: Next.js, React, TypeScript
 - Backend: Next.js API routes
-- Database: PostgreSQL
+- Database: PostgreSQL (relational data) and Neo4j (traceability graph)
 - Database driver: `pg`
 - Runtime: Node.js
 
@@ -88,6 +93,15 @@ Open the application at:
 
 http://localhost:3000
 
+## Neo4j Setup
+
+Add `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` and `JWT_SECRET` to `.env.local` (see `.env.example`).
+For multi-tier tracing run `db/postgres/02a_supplier_links.sql`, then load the graph:
+
+```bash
+node --env-file=.env.local neo4j/import.mjs
+```
+
 ## Application Pages
 
 | Page | Route |
@@ -96,6 +110,8 @@ http://localhost:3000
 | Batch Management | `/batches` |
 | Low Stock Monitoring | `/low-stock` |
 | Order Management | `/orders` |
+| Batch Traceability | `/trace` |
+| Login | `/login` |
 
 ## API Endpoints
 
@@ -105,7 +121,9 @@ http://localhost:3000
 | `/api/warehouses` | Retrieves warehouse stock information |
 | `/api/batches` | Retrieves expiring batch information |
 | `/api/low-stock` | Retrieves low-stock records |
-| `/api/orders` | Retrieves retailer order information |
+| `/api/orders` | Retrieves retailer order information (ADMIN; RETAILER sees own) |
+| `/api/auth/login`, `/logout`, `/me`, `/register` | Authentication (`register` is ADMIN only) |
+| `/api/trace`, `/api/trace/[batchId]?direction=&depth=` | Batch list and Neo4j trace (ADMIN, QUALITY_INSPECTOR, SUPPLIER own) |
 
 ## Testing
 

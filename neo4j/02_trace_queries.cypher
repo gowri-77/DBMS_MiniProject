@@ -14,7 +14,13 @@ RETURN s.shipment_id AS shipment_id, s.status AS status, x.quantity AS quantity,
        src.name AS from_warehouse, labels(dest)[0] AS dest_type, dest.name AS destination
 ORDER BY s.shipment_id;
 
-// Multi-tier (enable once supplier->supplier edges exist in Postgres/graph):
-// MATCH (b:Batch {batch_id: $batchId})<-[:USED_IN]-(:RawMaterial)<-[:SUPPLIED]-(s:Supplier)
-// MATCH (up:Supplier)-[:SUPPLIES_RAW_MATERIAL_TO*1..3]->(s)
-// RETURN DISTINCT up.name, up.tier;
+// MULTI-TIER UPSTREAM: suppliers behind the direct suppliers, up to N tiers.
+// Needs SUPPLIES_RAW_MATERIAL_TO edges (db/postgres/02a_supplier_links.sql + neo4j/import.mjs).
+// Cypher cannot take the depth as a parameter; the API substitutes a validated integer (1-5).
+MATCH (b:Batch {batch_id: $batchId})<-[:USED_IN]-(:RawMaterial)<-[:SUPPLIED]-(s:Supplier)
+WITH DISTINCT s
+MATCH p = (up:Supplier)-[:SUPPLIES_RAW_MATERIAL_TO*1..3]->(s)
+RETURN s.supplier_id AS direct_supplier_id, s.name AS direct_supplier,
+       up.supplier_id AS supplier_id, up.name AS supplier, up.tier AS tier,
+       length(p) AS hops, [n IN nodes(p) | n.name] AS path
+ORDER BY hops, supplier;

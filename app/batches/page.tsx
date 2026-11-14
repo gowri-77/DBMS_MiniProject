@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/client";
 
 type Batch = {
   batch_id: number;
@@ -19,7 +20,7 @@ export default function BatchesPage() {
   useEffect(() => {
     async function loadBatches() {
       try {
-        const response = await fetch("/api/batches");
+        const response = await authFetch("/api/batches");
 
         if (!response.ok) {
           throw new Error("Unable to load batches");
