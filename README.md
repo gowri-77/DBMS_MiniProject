@@ -24,7 +24,7 @@ A web-based supply chain inventory and traceability application built using Next
 - Displays order status, shipment status, and delivery dates.
 
 ### 5. Batch Traceability (Neo4j) and Access Control
-- Login with role-based access (ADMIN, SUPPLIER, QUALITY_INSPECTOR, RETAILER); bcrypt + JWT in an httpOnly cookie.
+- Login with role-based access (ADMIN, SUPPLIER, INSPECTOR, RETAILER); bcrypt + JWT in an httpOnly cookie.
 - `/trace` traces a batch upstream (suppliers, multi-tier sub-suppliers up to 5 levels) and downstream (shipments, warehouses, retailers).
 - Suppliers see only their own batches; retailers see only their own orders.
 
@@ -123,7 +123,7 @@ node --env-file=.env.local neo4j/import.mjs
 | `/api/low-stock` | Retrieves low-stock records |
 | `/api/orders` | Retrieves retailer order information (ADMIN; RETAILER sees own) |
 | `/api/auth/login`, `/logout`, `/me`, `/register` | Authentication (`register` is ADMIN only) |
-| `/api/trace`, `/api/trace/[batchId]?direction=&depth=` | Batch list and Neo4j trace (ADMIN, QUALITY_INSPECTOR, SUPPLIER own) |
+| `/api/trace`, `/api/trace/[batchId]?direction=&depth=` | Batch list and Neo4j trace (ADMIN, INSPECTOR, SUPPLIER own) |
 
 ## Testing
 

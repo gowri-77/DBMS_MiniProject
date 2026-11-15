@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
-export type Role = "ADMIN" | "SUPPLIER" | "QUALITY_INSPECTOR" | "RETAILER";
+export type Role = "ADMIN" | "SUPPLIER" | "INSPECTOR" | "RETAILER";
 
 export interface SessionUser {
   user_id: number;

@@ -15,7 +15,7 @@ try {
   const hash = await bcrypt.hash(password, 10);
   const users = [
     ["Test Admin", "admin@test.com", "ADMIN", null, null],
-    ["Test Inspector", "inspector@test.com", "QUALITY_INSPECTOR", null, null],
+    ["Test Inspector", "inspector@test.com", "INSPECTOR", null, null],
     ["Test Supplier", "supplier@test.com", "SUPPLIER", supplier.supplier_id, null],
     ["Test Retailer", "retailer@test.com", "RETAILER", null, retailer.retailer_id],
   ];

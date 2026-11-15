@@ -3,7 +3,7 @@ import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireRole(req, ["ADMIN", "QUALITY_INSPECTOR", "SUPPLIER"]);
+  const auth = await requireRole(req, ["ADMIN", "INSPECTOR", "SUPPLIER"]);
   if ("error" in auth) return auth.error;
 
   try {
