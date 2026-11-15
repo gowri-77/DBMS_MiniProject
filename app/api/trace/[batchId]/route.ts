@@ -28,13 +28,13 @@ RETURN s.shipment_id AS shipment_id, s.status AS status, x.quantity AS quantity,
        src.name AS from_warehouse, labels(dest)[0] AS dest_type, dest.name AS destination
 ORDER BY s.shipment_id`;
 
-// ADMIN and QUALITY_INSPECTOR can trace any batch. A SUPPLIER can trace only
+// ADMIN and INSPECTOR can trace any batch. A SUPPLIER can trace only
 // batches that contain materials they supplied.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ batchId: string }> }
 ) {
-  const auth = await requireRole(req, ["ADMIN", "QUALITY_INSPECTOR", "SUPPLIER"]);
+  const auth = await requireRole(req, ["ADMIN", "INSPECTOR", "SUPPLIER"]);
   if ("error" in auth) return auth.error;
   const { user } = auth;
 

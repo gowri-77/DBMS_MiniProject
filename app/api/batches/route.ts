@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 
-// ADMIN / QUALITY_INSPECTOR see all batches. A SUPPLIER sees only batches
+// ADMIN / INSPECTOR see all batches. A SUPPLIER sees only batches
 // made from raw materials that supplier provided.
 export async function GET(req: NextRequest) {
-  const auth = await requireRole(req, ["ADMIN", "QUALITY_INSPECTOR", "SUPPLIER"]);
+  const auth = await requireRole(req, ["ADMIN", "INSPECTOR", "SUPPLIER"]);
   if ("error" in auth) return auth.error;
   const { user } = auth;
 

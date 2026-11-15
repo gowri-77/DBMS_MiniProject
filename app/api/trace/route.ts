@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 // Lists batches so the trace page can offer a picker.
 // SUPPLIER sees only batches that contain their materials.
 export async function GET(req: NextRequest) {
-  const auth = await requireRole(req, ["ADMIN", "QUALITY_INSPECTOR", "SUPPLIER"]);
+  const auth = await requireRole(req, ["ADMIN", "INSPECTOR", "SUPPLIER"]);
   if ("error" in auth) return auth.error;
   const { user } = auth;
 

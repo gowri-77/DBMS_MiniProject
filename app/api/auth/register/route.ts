@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 
-const ROLES = ["ADMIN", "SUPPLIER", "QUALITY_INSPECTOR", "RETAILER"];
+const ROLES = ["ADMIN", "SUPPLIER", "INSPECTOR", "RETAILER"];
 
 export async function POST(req: NextRequest) {
   const auth = await requireRole(req, ["ADMIN"]);
